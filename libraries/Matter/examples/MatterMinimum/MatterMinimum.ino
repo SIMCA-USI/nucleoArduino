@@ -1,4 +1,4 @@
-// Copyright 2024 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2025 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,21 @@
 
 // Matter Manager
 #include <Matter.h>
+#if !CONFIG_ENABLE_CHIPOBLE
+// if the device can be commissioned using BLE, WiFi is not used - save flash space
 #include <WiFi.h>
+#endif
 
 // List of Matter Endpoints for this Node
 // Single On/Off Light Endpoint - at least one per node
 MatterOnOffLight OnOffLight;
 
+// CONFIG_ENABLE_CHIPOBLE is enabled when BLE is used to commission the Matter Network
+#if !CONFIG_ENABLE_CHIPOBLE
 // WiFi is manually set and started
 const char *ssid = "your-ssid";          // Change this to your WiFi SSID
 const char *password = "your-password";  // Change this to your WiFi password
+#endif
 
 // Light GPIO that can be controlled by Matter APP
 #ifdef LED_BUILTIN
@@ -55,17 +61,27 @@ bool onOffLightCallback(bool state) {
 }
 
 void setup() {
+  Serial.begin(115200);
+
   // Initialize the USER BUTTON (Boot button) that will be used to decommission the Matter Node
   pinMode(buttonPin, INPUT_PULLUP);
   // Initialize the LED GPIO
   pinMode(ledPin, OUTPUT);
 
+// CONFIG_ENABLE_CHIPOBLE is enabled when BLE is used to commission the Matter Network
+#if !CONFIG_ENABLE_CHIPOBLE
   // Manually connect to WiFi
   WiFi.begin(ssid, password);
   // Wait for connection
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
   while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
     delay(500);
   }
+  Serial.println();
+#endif
 
   // Initialize at least one Matter EndPoint
   OnOffLight.begin();
@@ -77,11 +93,11 @@ void setup() {
   Matter.begin();
 
   if (!Matter.isDeviceCommissioned()) {
-    log_i("Matter Node is not commissioned yet.");
-    log_i("Initiate the device discovery in your Matter environment.");
-    log_i("Commission it to your Matter hub with the manual pairing code or QR code");
-    log_i("Manual pairing code: %s\r\n", Matter.getManualPairingCode().c_str());
-    log_i("QR code URL: %s\r\n", Matter.getOnboardingQRCodeUrl().c_str());
+    Serial.println("Matter Node is not commissioned yet.");
+    Serial.println("Initiate the device discovery in your Matter environment.");
+    Serial.println("Commission it to your Matter hub with the manual pairing code or QR code");
+    Serial.printf("Manual pairing code: %s\r\n", Matter.getManualPairingCode().c_str());
+    Serial.printf("QR code URL: %s\r\n", Matter.getOnboardingQRCodeUrl().c_str());
   }
 }
 
