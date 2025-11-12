@@ -1,2 +1,2 @@
-# nucleoArduino3.1.1
+# nucleoArduino
  Este repo contiene el núclo de Arduino para ESP32 versión 3.3.3 obtenido a través de Arduino IDE.
